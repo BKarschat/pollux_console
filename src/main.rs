@@ -17,7 +17,7 @@ fn main() -> Result<()> {
     let main_terminal = ratatui::init();
     let result_main = run(main_terminal);
     ratatui::restore();
-    Ok(())
+    result_main
 }
 
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
