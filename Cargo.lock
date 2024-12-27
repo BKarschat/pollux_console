@@ -320,17 +320,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
 
 [[package]]
-name = "listtolean"
-version = "0.1.0"
-dependencies = [
- "color-eyre",
- "crossterm",
- "ratatui",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "lock_api"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -453,6 +442,17 @@ name = "pin-project-lite"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "915a1e146535de9163f3987b8944ed8cf49a18bb0056bcebcdcece385cece4ff"
+
+[[package]]
+name = "pollux_console"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "ratatui",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "pretty_assertions"
