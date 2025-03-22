@@ -1,9 +1,9 @@
 use color_eyre::{eyre::Ok, owo_colors::OwoColorize, Result};
 use std::io;
-use tracing::{info, Level};
+use tracing::{event, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -36,13 +36,42 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        todo!()
+        match crossterm::event::read()? {
+            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                self.handle_key_event(key_event)
+            }
+            _ => {}
+        };
+        Ok(())
+    }
+
+    fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char('q') => self.exit(),
+            KeyCode::Left => self.decrement_counter(),
+            KeyCode::Right => self.increment_counter(),
+            _ => {}
+        }
+    }
+
+    fn exit(&mut self) {
+        self.exit = true;
+    }
+
+    fn decrement_counter(&mut self) {
+        // for error handling purpose use saturating_sub instead!
+        self.counter += 1;
+    }
+
+    fn increment_counter(&mut self) {
+        // for error handling purpose use saturating_sub instead
+        self.counter -= 1;
     }
 }
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from("Pollux gonna sniff".bold());
+        let title = Line::from(" Pollux gonna sniff ".bold());
         let instructions = Line::from(vec![
             "Decrement ".into(),
             "<Left>".blue().bold(),
@@ -51,6 +80,7 @@ impl Widget for &App {
             " Quit ".into(),
             "<Q>".blue().bold(),
         ]);
+
         let block = Block::bordered()
             .title(title.centered())
             .title_bottom(instructions.centered())
@@ -86,7 +116,7 @@ fn main() -> Result<()> {
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
         terminal.draw(render)?;
-        if matches!(event::read()?, Event::Key(_)) {
+        if matches!(crossterm::event::read()?, Event::Key(_)) {
             break Ok(());
         }
     }
@@ -94,4 +124,25 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 
 fn render(frame: &mut Frame) {
     frame.render_widget("Rust App", frame.area());
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::App;
+
+    #[test]
+    fn handle_key_event() -> std::io::Result<()> {
+        let mut app = App::default();
+        app.handle_key_event(crossterm::event::KeyCode::Right.into());
+        assert_eq!(app.counter, 1);
+
+        app.handle_key_event(crossterm::event::KeyCode::Left.into());
+        assert_eq!(app.counter, 0);
+
+        let mut app = App::default();
+        app.handle_key_event(crossterm::event::KeyCode::Char('q').into());
+        assert!(app.exit);
+
+        Ok(())
+    }
 }
