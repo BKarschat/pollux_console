@@ -5,12 +5,13 @@ use crossterm::{
         self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
     },
 };
+use get_if_addrs::{get_if_addrs, IfAddr};
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
     Terminal,
 };
 use std::io;
@@ -31,6 +32,10 @@ fn main() -> io::Result<()> {
 
 fn run_app(terminal: &mut ratatui::DefaultTerminal) -> io::Result<()> {
     loop {
+        // get actual interfaces and ip addresses
+        // could make everything slow...
+        let interfaces = list_interfaces();
+
         terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
@@ -45,9 +50,16 @@ fn run_app(terminal: &mut ratatui::DefaultTerminal) -> io::Result<()> {
             let header = Paragraph::new("=== Header ===")
                 .style(Style::default().fg(Color::Yellow))
                 .block(Block::default().borders(Borders::ALL).title("Header"));
+            let items: Vec<ListItem> = interfaces
+                .iter()
+                .map(|iface| ListItem::new(iface.clone()))
+                .collect();
 
-            let body = Paragraph::new("Das ist der Body")
-                .block(Block::default().borders(Borders::ALL).title("Body"));
+            let body = List::new(items).block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Network Interfaces"),
+            );
 
             let footer = Paragraph::new(Span::styled(
                 "Press q to quit",
@@ -68,5 +80,21 @@ fn run_app(terminal: &mut ratatui::DefaultTerminal) -> io::Result<()> {
                 }
             }
         }
+    }
+}
+
+fn list_interfaces() -> Vec<String> {
+    match get_if_addrs() {
+        Ok(ifaces) => ifaces
+            .into_iter()
+            .map(|iface| {
+                let ip = match iface.addr {
+                    IfAddr::V4(ipv4) => ipv4.ip.to_string(),
+                    IfAddr::V6(ipv6) => ipv6.ip.to_string(),
+                };
+                format!("{} ({})", iface.name, ip)
+            })
+            .collect(),
+        Err(_) => vec!["Fehler beim Laden der Ifaces! ".into()],
     }
 }
