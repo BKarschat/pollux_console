@@ -1,27 +1,35 @@
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{
-        self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-    },
-};
+use crossterm::event::{self, Event, KeyCode};
 use get_if_addrs::{get_if_addrs, IfAddr};
 use ratatui::{
-    backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, Borders, List, ListItem, Paragraph},
-    Terminal,
 };
-use std::io;
-use std::time::Duration;
+use std::{
+    io,
+    sync::{Arc, Mutex},
+    thread,
+    time::{Duration, Instant},
+};
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
 
+    //get interfaces thread safe via mutex and shared state
+    let interfaces = Arc::new(Mutex::new(Vec::new()));
+    let interface_clone = Arc::clone(&interfaces);
+    // get the backend thread running
+    thread::spawn(move || loop {
+        let data = list_interfaces();
+        if let Ok(mut locked) = interface_clone.lock() {
+            *locked = data;
+        }
+        thread::sleep(Duration::from_secs(1));
+    });
+
     // Loop
-    let result = run_app(&mut terminal);
+    let result = run_app(&mut terminal, interfaces);
 
     // CLeanup
     //
@@ -30,12 +38,22 @@ fn main() -> io::Result<()> {
     result
 }
 
-fn run_app(terminal: &mut ratatui::DefaultTerminal) -> io::Result<()> {
-    loop {
-        // get actual interfaces and ip addresses
-        // could make everything slow...
-        let interfaces = list_interfaces();
+fn run_app(
+    terminal: &mut ratatui::DefaultTerminal,
+    interfaces: Arc<Mutex<Vec<String>>>,
+) -> io::Result<()> {
+    // Kill thread if user quits the add, so you need a tic
+    let tick_rate = Duration::from_millis(200);
+    let mut last_tick = Instant::now();
 
+    loop {
+        let items_snapshot = {
+            if let Ok(locked) = interfaces.lock() {
+                locked.clone()
+            } else {
+                vec!["Error shared state".into()]
+            }
+        };
         terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
@@ -47,10 +65,10 @@ fn run_app(terminal: &mut ratatui::DefaultTerminal) -> io::Result<()> {
                 ])
                 .split(f.size());
 
-            let header = Paragraph::new("=== Header ===")
+            let header = Paragraph::new("=== Pollux sniffing ===")
                 .style(Style::default().fg(Color::Yellow))
                 .block(Block::default().borders(Borders::ALL).title("Header"));
-            let items: Vec<ListItem> = interfaces
+            let items: Vec<ListItem> = items_snapshot
                 .iter()
                 .map(|iface| ListItem::new(iface.clone()))
                 .collect();
@@ -72,12 +90,18 @@ fn run_app(terminal: &mut ratatui::DefaultTerminal) -> io::Result<()> {
         })?;
 
         //Event handling
+        let timeout = tick_rate
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or_else(|| Duration::from_secs(0));
 
-        if event::poll(Duration::from_millis(200))? {
+        if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.code == KeyCode::Char('q') {
                     return Ok(());
                 }
+            }
+            if last_tick.elapsed() >= tick_rate {
+                last_tick = Instant::now();
             }
         }
     }
