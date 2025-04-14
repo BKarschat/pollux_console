@@ -6,41 +6,38 @@ use std::{
 
 use ratatui;
 
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::{event::{self, Event, KeyCode}, terminal};
 
 use crate::ui::draw_ui;
 
-pub fn run_app(
-    terminal: &mut ratatui::DefaultTerminal,
-    interfaces: Arc<Mutex<Vec<String>>>,
-) -> io::Result<()> {
-    // Kill threa d if user quits the add, so you need a tic
-    let tick_rate = Duration::from_millis(200);
-    let mut last_tick = Instant::now();
+pub struct App {
+    pub running: bool,
+    pub logs: Vec<String>,
+    pub scroll: u16,
+}
 
-    loop {
-        let items_snapshot = {
-            if let Ok(locked) = interfaces.lock() {
-                locked.clone()
-            } else {
-                vec!["Error shared state".into()]
-            }
-        };
-        terminal.draw(|f| draw_ui(f, &items_snapshot))?;
-
-        let timeout = tick_rate
-            .checked_sub(last_tick.elapsed())
-            .unwrap_or_else(|| Duration::from_secs(0));
-
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
-                    return Ok(());
-                }
-            }
-            if last_tick.elapsed() >= tick_rate {
-                last_tick = Instant::now();
-            }
-        }
+impl App {
+    pub fn new() -> Self {
+        running: true;
+        logs: vec![""];
+        scroll: 0;
     }
+
+    pub fn run_app(&mut self) -> io::Result<()> {
+        // Kill threa d if user quits the add, so you need a tic
+        let tick_rate = Duration::from_millis(200);
+        let mut last_tick = Instant::now();
+        
+        //init ratatui terminal
+
+        let terminal = ratatui::init();
+        loop {
+            if !self.running { break;}
+            ui::draw(&mut terminal, self);
+            input::handle_input(self);
+            };
+ratatui::restore();
+   Ok(()) 
+        }
+   
 }

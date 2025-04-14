@@ -1,9 +1,11 @@
 mod app;
+mod input;
 mod net;
 mod ui;
 
 use crate::app::run_app;
 use crate::net::get_interfaces;
+use app::App;
 use crossterm::event::{self, Event, KeyCode};
 use get_if_addrs::{get_if_addrs, IfAddr};
 use ratatui::{
@@ -34,12 +36,13 @@ fn main() {
         thread::sleep(Duration::from_secs(1));
     });
 
+    let app = App::new();
+
     // Loop
-    let result = run_app(&mut terminal, interfaces);
+    let result = app.run_app()?;
 
     // CLeanup
     //
-    ratatui::restore();
     if let Err(e) = result {
         eprintln!("Error: {}", e);
     }
