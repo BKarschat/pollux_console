@@ -1,26 +1,32 @@
 use ratatui::{
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     widgets::{Block, Borders, List, ListItem},
     Frame,
 };
 
-pub fn draw_ui(f: &mut Frame, items: &[String]) {
-    let size = f.area();
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(1)].as_ref())
-        .split(size);
+pub trait UIWidget {
+    fn render(&self, f: &mut Frame, area: Rect);
+}
 
-    let list_items: Vec<ListItem> = items
-        .iter()
-        .map(|iface| ListItem::new(iface.clone()))
-        .collect();
 
-    let list = List::new(list_items).block(
-        Block::default()
-            .title("Network interfaces")
-            .borders(Borders::ALL),
-    );
+struct UiHandler {
+    widgets: Vec<Box<dyn UIWidget>>,
+}
 
-    f.render_widget(list, chunks[0]);
+impl UiHandler {
+    pub fn new () -> Self {
+        Self {widgets: Vec::new()}
+    }
+
+    pub fun add_widget(&mut self, widget: Box<dyn UIWidget>) {
+        self.widgets.push(widget);
+}
+
+    // handler should handle the ui chunks, and they should know how to render their content
+pub fn render_ui(&self, frame: &mut Frame, areas: &[Rect]) {
+    for (i, widget) in self.widgets.iter().enumerate() {
+        if let Some(area) = areas.get(i) {
+            widget.render(frame, *area);
+        }
+    }
 }

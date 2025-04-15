@@ -1,10 +1,9 @@
 mod app;
 mod input;
 mod net;
-mod ui;
 
-use crate::app::run_app;
 use crate::net::get_interfaces;
+use crate::App::run_app;
 use app::App;
 use crossterm::event::{self, Event, KeyCode};
 use get_if_addrs::{get_if_addrs, IfAddr};
