@@ -4,29 +4,31 @@ use ratatui::{
     Frame,
 };
 
-pub trait UIWidget {
+pub trait UiWidget {
     fn render(&self, f: &mut Frame, area: Rect);
 }
-
 
 struct UiHandler {
     widgets: Vec<Box<dyn UIWidget>>,
 }
 
 impl UiHandler {
-    pub fn new () -> Self {
-        Self {widgets: Vec::new()}
+    pub fn new() -> Self {
+        Self {
+            widgets: Vec::new(),
+        }
     }
 
-    pub fun add_widget(&mut self, widget: Box<dyn UIWidget>) {
+    pub fn add_widget(&mut self, widget: Box<dyn UIWidget>) {
         self.widgets.push(widget);
-}
+    }
 
-    // handler should handle the ui chunks, and they should know how to render their content
-pub fn render_ui(&self, frame: &mut Frame, areas: &[Rect]) {
-    for (i, widget) in self.widgets.iter().enumerate() {
-        if let Some(area) = areas.get(i) {
-            widget.render(frame, *area);
+    // should handle the ui chunks, and they should know how to render their content
+    pub fn render_ui(&self, frame: &mut Frame, areas: &[Rect]) {
+        for (i, widget) in self.widgets.iter().enumerate() {
+            if let Some(area) = areas.get(i) {
+                widget.render(frame, *area);
+            }
         }
     }
 }

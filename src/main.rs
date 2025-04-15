@@ -1,12 +1,8 @@
 mod app;
 mod input;
-mod net;
+mod modules;
+mod ui;
 
-use crate::net::get_interfaces;
-use crate::App::run_app;
-use app::App;
-use crossterm::event::{self, Event, KeyCode};
-use get_if_addrs::{get_if_addrs, IfAddr};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -19,10 +15,9 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+use App;
 
 fn main() {
-    let mut terminal = ratatui::init();
-
     //get interfaces thread safe via mutex and shared state
     let interfaces = Arc::new(Mutex::new(Vec::new()));
     let interfaces_clone = Arc::clone(&interfaces);

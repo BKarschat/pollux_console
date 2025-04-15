@@ -12,16 +12,7 @@ pub struct InterfaceListWidget {
 
 impl InterfaceListWidget {
     pub fn new(data: Vec<String>) -> Self {
-        Self {data, true}
-    }
-    
-    pub fn change_data(tmp_data: Vec<String>) {
-        // if data has changed store data and let it render
-        if tmp_data.iter().collect() != self.ifaces.iter().collect() {
-            // new data
-            self.render = true;
-            self.ifaces = tmp_data;
-}
+        Self {ifaces: data, render: true}
     }
 }
 
