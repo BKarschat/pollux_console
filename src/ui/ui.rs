@@ -4,12 +4,12 @@ use ratatui::{
     Frame,
 };
 
-pub trait UiWidget {
+pub trait UiTraitWidget {
     fn render(&self, f: &mut Frame, area: Rect);
 }
 
-struct UiHandler {
-    widgets: Vec<Box<dyn UIWidget>>,
+pub struct UiHandler {
+    widgets: Vec<Box<dyn UiTraitWidget>>,
 }
 
 impl UiHandler {
@@ -19,7 +19,7 @@ impl UiHandler {
         }
     }
 
-    pub fn add_widget(&mut self, widget: Box<dyn UIWidget>) {
+    pub fn add_widget(&mut self, widget: Box<dyn UiTraitWidget>) {
         self.widgets.push(widget);
     }
 
