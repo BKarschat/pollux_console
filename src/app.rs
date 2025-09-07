@@ -4,12 +4,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use ratatui;
+use crossterm::event;
+use ratatui::{self, DefaultTerminal};
 
-use crate::{
-    modules::network,
-    ui::{network, ui},
-};
+use crate::{modules::network, ui};
 
 pub struct App {
     pub running: bool,
@@ -28,9 +26,33 @@ impl App {
         }
     }
 
-    pub fn run_app(&mut self) -> io::Result<()> {
+    fn render_app(&mut self, tui: &mut DefaultTerminal) -> Result<()> {
+        tui.draw(|frame| frame.render_widget(self, frame.area()))?;
+        Ok(())
+    }
+
+    fn handle_events(&mut self) -> Result<()> {
+        let frame_rate = Duration::from_secs_f64(1.0 / 60.0);
+        if !event::poll(frame_rate)? {
+            return Ok(());
+        }
+        if event::read()?.is_key_press() {
+            self.running = false;
+        Ok(())
+    }
+    
+    pub fn run_app(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        // 
+        while self.running {
+            self.render_app(terminal)?;
+            self.handle_events()?;
+        }
+        Ok(())
+    }
+
+
         // Kill threa d if user quits the add, so you need a tic
-        let tick_rate = Duration::from_millis(200);
+        let tick_rate = Duration::from_secs_f64(1.0 / 60.0);
         let mut last_tick = Instant::now();
 
         //init ratatui terminal
@@ -45,7 +67,7 @@ impl App {
         let network_interfaces = network::InterfaceData::new(tx_clone);
 
         // add network interfaces to the ui
-        let ui_handler = ui::UiHandler::new();
+        let ui_handler = ui::ui::UiHandler::new();
 
         ui_handler.add_widget(Box::new(ui::network::InterfaceListWidget::new()));
         // Todo add data to UI!
@@ -55,7 +77,7 @@ impl App {
             }
             if let Ok(interfaces) = rx.recv() {
                 // TODO what is happing here?!
-                terminal.draw(|f| ui_handler::render_ui(f, &snapshot));
+                terminal.draw(|f| ui_handler::render_ui(f, &));
             }
             input::handle_input(self);
         }
