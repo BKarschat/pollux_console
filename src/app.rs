@@ -4,6 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+<<<<<<< HEAD
 use crossterm::{event::KeyCode, Event, EventStream};
 use ratatui::{self, DefaultTerminal};
 use tokio_stream::StreamExt;
@@ -11,21 +12,44 @@ use tokio_stream::StreamExt;
 use crate::{modules::network, ui, input};
 
 #[derive(Debug, Default)]
+=======
+use crossterm::event::{self, KeyCode};
+use ratatui::{self, DefaultTerminal};
+use tokio;
+use tokio_stream::StreamExt;
+
+use crate::{modules::network, ui::*};
+
+#[derive(Debug)]
+>>>>>>> a44460c13cd3186624d16190d6a401976ae7cfb2
 pub struct App {
     pub running: bool,
     pub logs: Vec<String>,
-    pub scroll: u16,
     ui_handler: ui::UiHandler,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self {
+            running: true,
+            logs: Vec::new(),
+            ui_handler: ui::UiHandler::new(),
+        }
+    }
 }
 
 impl App {
     pub fn new() -> Self {
+<<<<<<< HEAD
         Self {
             running: true,
             logs: Vec::new(),
             scroll: 0,
             ui_handler: ui::UiHandler::new()
         }
+=======
+        Self::default()
+>>>>>>> a44460c13cd3186624d16190d6a401976ae7cfb2
     }
 
     fn render_app(&mut self, tui: &mut DefaultTerminal) -> Result<()> {
@@ -33,15 +57,22 @@ impl App {
         Ok(())
     }
 
-    fn handle_events(&mut self) -> Result<()> {
-        let frame_rate = Duration::from_secs_f64(1.0 / 60.0);
-        if !event::poll(frame_rate)? {
+    fn handle_event(&mut self, event: &Event) -> Result<()> {
+        if let Some(key) = event.as_key_press_event() {
+            match key.code {
+                KeyCode::Char('q') | KeyCode::Esc => self.running = false,
+                KeyCode::Char('j') | KeyCode::Down => self.pull_r,
+
+                _ => Ok(()),
+            }
             return Ok(());
         }
         if event::read()?.is_key_press() {
             self.running = false;
+        }
         Ok(())
     }
+<<<<<<< HEAD
    
     fn handle_event (&mut self, event: Event) {
         if let Some(key) = event.as_key_pressed_event() {
@@ -87,14 +118,22 @@ impl App {
         loop {
             if !self.running {
                 break;
+=======
+
+    pub async fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        let frame_rate = Duration::from_secs_f64(1.0 / 60.0);
+        let mut interval = tokio::time::interval(frame_rate);
+        let mut events = EventStream::new();
+
+        while self.running {
+            tokio::select! {
+                _ = interval.tick() => {terminal.draw(|frame| self.render(frame))?;},
+                Some(Ok(event)) = events.next() => self.handle_event(&event),
+>>>>>>> a44460c13cd3186624d16190d6a401976ae7cfb2
             }
-            if let Ok(interfaces) = rx.recv() {
-                // TODO what is happing here?!
-                terminal.draw(|f| ui_handler::render_ui(f, &));
-            }
-            input::handle_input(self);
+            //self.render_app(terminal)?;
+            //self.handle_events()?;
         }
-        ratatui::restore();
         Ok(())
     }
 }
