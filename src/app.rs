@@ -4,11 +4,13 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossterm::event;
+use crossterm::{event::KeyCode, Event, EventStream};
 use ratatui::{self, DefaultTerminal};
+use tokio_stream::StreamExt;
 
-use crate::{modules::network, ui};
+use crate::{modules::network, ui, input};
 
+#[derive(Debug, Default)]
 pub struct App {
     pub running: bool,
     pub logs: Vec<String>,
@@ -22,7 +24,7 @@ impl App {
             running: true,
             logs: Vec::new(),
             scroll: 0,
-            ui_handler: ui::UiHandler::new(),
+            ui_handler: ui::UiHandler::new()
         }
     }
 
@@ -40,10 +42,25 @@ impl App {
             self.running = false;
         Ok(())
     }
-    
-    pub fn run_app(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+   
+    fn handle_event (&mut self, event: Event) {
+        if let Some(key) = event.as_key_pressed_event() {
+        match key.code {
+            KeyCode::Char('q') //TODO
+        }
+
+    pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         // 
+        // Kill threa d if user quits the add, so you need a tic
+        let tick_rate = Duration::from_secs_f64(1.0 / 60.0);
+        let mut interval = tokio::time::intervall(tick_rate);
+        let mut events = EventStream::new();
+        
+
         while self.running {
+            tokio::select!i {
+                _ = interval.tick() => { terminal.draw(|frame| self.render(frame))?; },
+                Some(Ok(event)) = events.next() => handle_input(&event);
             self.render_app(terminal)?;
             self.handle_events()?;
         }
@@ -51,11 +68,7 @@ impl App {
     }
 
 
-        // Kill threa d if user quits the add, so you need a tic
-        let tick_rate = Duration::from_secs_f64(1.0 / 60.0);
-        let mut last_tick = Instant::now();
-
-        //init ratatui terminal
+                //init ratatui terminal
 
         let terminal = ratatui::init();
 

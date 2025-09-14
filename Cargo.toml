@@ -3,7 +3,6 @@ name = "pollux_console"
 version = "0.1.0"
 license = "BSD-3"
 edition = "2021"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -11,5 +10,5 @@ color-eyre = "0.6"
 crossterm = "0.28.1"
 get_if_addrs = "0.5.3"
 ratatui = "0.29.0"
-
-
+tokio = { version = "1.47.1", features = ["full"] }
+tokio-stream = "0.1"
